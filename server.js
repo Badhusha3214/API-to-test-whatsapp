@@ -1,11 +1,32 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-require('dotenv').config();
+const path = require('path');
 
-// Import routes
-const placesRoutes = require('./routes/places');
-const workersRoutes = require('./routes/workers');
+// Load environment variables from .env file if available
+try {
+  require('dotenv').config();
+} catch (err) {
+  console.log('No .env file found or error loading it');
+}
+
+// Import routes - handle potential errors if files don't exist yet
+let placesRoutes;
+let workersRoutes;
+
+try {
+  placesRoutes = require('./routes/places');
+  workersRoutes = require('./routes/workers');
+} catch (err) {
+  console.error('Error loading routes:', err.message);
+  
+  // Create fallback routes to avoid crashes
+  placesRoutes = express.Router();
+  placesRoutes.get('/', (req, res) => res.json({ message: 'Places API not yet implemented' }));
+  
+  workersRoutes = express.Router();
+  workersRoutes.get('/', (req, res) => res.json({ message: 'Workers API not yet implemented' }));
+}
 
 // Initialize express
 const app = express();
@@ -19,9 +40,24 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/api/places', placesRoutes);
 app.use('/api/workers', workersRoutes);
 
-// Root route
+// Root route - enhanced with more info for debugging
 app.get('/', (req, res) => {
-  res.send('WhatsApp API Backend is running!');
+  res.json({
+    status: 'ok',
+    message: 'WhatsApp API Backend is running!',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    endpoints: {
+      places: '/api/places',
+      workers: '/api/workers'
+    }
+  });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
 });
 
 // Set port with fallback and alternative options
@@ -40,19 +76,15 @@ const findAvailablePort = (startPort) => {
   });
 };
 
-// Start server with dynamic port selection
+// Start server with dynamic port selection - simplified for hosting platforms
 const startServer = async () => {
   try {
-    const preferredPort = process.env.PORT || 3000;
-    const PORT = await findAvailablePort(preferredPort);
+    // Most hosting platforms provide a PORT environment variable
+    const PORT = process.env.PORT || 3000;
     
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
-      // If we're using a different port than expected, provide the full URL
-      if (PORT !== preferredPort) {
-        console.log(`Note: Default port ${preferredPort} was in use.`);
-        console.log(`API endpoints available at http://localhost:${PORT}/api/...`);
-      }
+      console.log(`API endpoints available at http://localhost:${PORT}/api/...`);
     });
   } catch (error) {
     console.error('Failed to start server:', error.message);
@@ -61,3 +93,17 @@ const startServer = async () => {
 };
 
 startServer();
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully');
+  process.exit(0);
+});
+
+// Export for potential testing
+module.exports = app;

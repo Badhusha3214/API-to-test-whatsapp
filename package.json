@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Node.js backend for WhatsApp API integration",
   "main": "server.js",
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "scripts": {
     "start": "node server.js",
     "start:alt": "PORT=3001 node server.js",
