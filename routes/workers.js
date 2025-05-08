@@ -83,4 +83,52 @@ router.post('/select', async (req, res) => {
   }
 });
 
+// POST - General logger endpoint to receive and log any data
+router.post('/log', (req, res) => {
+  try {
+    // More verbose logging of the request body
+    console.log('=== POST REQUEST BODY LOG ===');
+    console.log('Content-Type:', req.headers['content-type']);
+    console.log('Body received:', req.body);
+    console.log('Stringified body:', JSON.stringify(req.body, null, 2));
+    console.log('=== END POST REQUEST LOG ===');
+    
+    res.status(200).json({
+      success: true,
+      message: 'Data received and logged successfully',
+      timestamp: new Date().toISOString(),
+      receivedData: req.body // Echo back the received data
+    });
+  } catch (error) {
+    console.error('Error in log endpoint:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to log data',
+      error: error.message
+    });
+  }
+});
+
+// GET - Alternative log endpoint for GET requests
+router.get('/log', (req, res) => {
+  try {
+    // Log the query parameters
+    console.log('Received GET request with query params:', JSON.stringify(req.query, null, 2));
+    
+    res.status(200).json({
+      success: true,
+      message: 'GET request logged successfully',
+      timestamp: new Date().toISOString(),
+      query: req.query
+    });
+  } catch (error) {
+    console.error('Error in GET log endpoint:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to log GET request',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
